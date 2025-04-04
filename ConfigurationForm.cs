@@ -10,6 +10,7 @@ public class ConfigurationForm : Form
     private Button btnRemoveFile;
     private Button btnRemoveDirectory;
     private CheckBox chkPersistentMode;
+    private CheckBox chkRunAtBoot;
     private Label lblInterval;
     private NumericUpDown numInterval;
     private Button btnSave;
@@ -113,6 +114,15 @@ public class ConfigurationForm : Form
         chkPersistentMode.CheckedChanged += ChkPersistentMode_CheckedChanged;
         this.Controls.Add(chkPersistentMode);
 
+        chkRunAtBoot = new CheckBox
+        {
+            Text = "Run at Boot",
+            Location = new Point(20, 330),
+            AutoSize = true
+        };
+        this.Controls.Add(chkRunAtBoot);
+        chkPersistentMode.Location = new Point(20, 360);
+
         lblInterval = new Label
         {
             Text = "Cleanup Interval (minutes):",
@@ -162,6 +172,25 @@ public class ConfigurationForm : Form
 
         chkPersistentMode.Checked = config.PersistentMode;
         numInterval.Value = config.CleanupIntervalMinutes;
+
+        bool isInStartup = IsInStartup();
+        chkRunAtBoot.Checked = isInStartup;
+        config.RunAtBoot = isInStartup;
+    }
+
+    private bool IsInStartup()
+    {
+        try
+        {
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", false))
+            {
+                return key.GetValue("ELECTRO-Cleanup") != null;
+            }
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     private void BtnAddFile_Click(object sender, EventArgs e)
@@ -243,6 +272,7 @@ public class ConfigurationForm : Form
 
         config.PersistentMode = chkPersistentMode.Checked;
         config.CleanupIntervalMinutes = (int)numInterval.Value;
+        config.RunAtBoot = chkRunAtBoot.Checked;
 
         // Save config
         Program.SaveConfig(config);
@@ -269,7 +299,7 @@ public class ConfigurationForm : Form
         {
             using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
             {
-                if (config.FilesToClean.Count > 0 || config.DirectoriesToClean.Count > 0)
+                if (config.RunAtBoot && (config.FilesToClean.Count > 0 || config.DirectoriesToClean.Count > 0))
                 {
                     string appPath = Application.ExecutablePath;
                     key.SetValue("ELECTRO-Cleanup", $"\"{appPath}\"");

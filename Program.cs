@@ -98,6 +98,7 @@ namespace ELECTRIS
         public List<string> DirectoriesToClean { get; set; } = new List<string>();
         public bool PersistentMode { get; set; } = false;
         public int CleanupIntervalMinutes { get; set; } = 60; // Default to hourly
+        public bool RunAtBoot { get; set; } = true; // Default to true for backward compatibility
     }
 
     public static class ResourceHelper
